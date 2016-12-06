@@ -27,7 +27,7 @@ if [ -z "$UID" ]; then
 fi
 
 # Use tini
-TINI_PATH="/opt/tini"
+TINI_PATH="/opt/tini/tini"
 
 if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
     docker pull $DOCKER_ENCAPS_IMG
