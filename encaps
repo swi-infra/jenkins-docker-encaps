@@ -26,6 +26,9 @@ if [ -z "$UID" ]; then
     UID=$(id -u)
 fi
 
+# Use tini
+TINI_PATH="/opt/tini"
+
 if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
     docker pull $DOCKER_ENCAPS_IMG
     docker run \
@@ -38,7 +41,7 @@ if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
         $DOCKER_ENCAPS_NET \
         $DOCKER_ENCAPS_ARGS \
         $DOCKER_ENCAPS_IMG \
-            /home/jenkins-slave/tini -- tail -f /dev/null > /dev/null
+            $TINI_PATH -- tail -f /dev/null > /dev/null
 
     if [ $? -ne 0 ]; then
         echo "Unable to launch container from $DOCKER_ENCAPS_IMG"
