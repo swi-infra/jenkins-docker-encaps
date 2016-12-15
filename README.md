@@ -21,6 +21,8 @@ Behavior of the script is defined by the following env variables:
  - `DOCKER_ENCAPS_ARGS` : extra arguments that should be given to docker upon instantiation
  - `DOCKER_ENCAPS_NAME` : name used for the container, default to `BUILD_TAG` which is usually provided by Jenkins, format is `jenkins-<JOB>-<BUILD_ID>`
  - `DOCKER_ENCAPS_SHELL` : to control the actual program executing your script, default to /bin/sh
+ - `DOCKER_ENCAPS_NET` : by default the container shared the host networking (--net=host). You can use this to set the hostname (--hostname=jenkins) instead, or cut the container connectivity (--network=none)
+ - `DOCKER_ENCAPS_WEIGHT` : relative weight of the container (to prioritize some containers compared to others)
 
 As it needs a running container, the script will instanciate one the first time `encaps` is run.
 

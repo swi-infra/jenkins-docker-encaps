@@ -12,6 +12,7 @@ DOCKER_ENCAPS_GID=${DOCKER_ENCAPS_GID:-$(id -g)}
 DOCKER_ENCAPS_ENTRYPOINT=${DOCKER_ENCAPS_ENTRYPOINT:-'tail'}
 DOCKER_ENCAPS_SLEEP_CMD=${DOCKER_ENCAPS_SLEEP_CMD:-'-f /dev/null'}
 
+# Name of the encaps container
 if [ -z "$DOCKER_ENCAPS_NAME" ]; then
     if [ -z "$BUILD_TAG" ]; then
         echo "No DOCKER_ENCAPS_NAME or BUILD_TAG"
@@ -23,6 +24,19 @@ fi
 
 # Spawn container
 if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; then
+
+    # (Relative) weight of the container (compared to other containers)
+    # cf:
+    # - https://docs.docker.com/engine/reference/run/#cpu-share-constraint
+    # - http://stackoverflow.com/questions/26841846/how-to-allocate-50-cpu-resource-to-docker-container
+    if [ -n "$DOCKER_ENCAPS_WEIGHT" ]; then
+        DOCKER_ENCAPS_CPU_SHARES=${DOCKER_ENCAPS_CPU_SHARES:-$((1024*DOCKER_ENCAPS_WEIGHT))}
+    fi
+
+    CPU_SHARED_OPT=""
+    if [ -n "$DOCKER_ENCAPS_CPU_SHARES" ]; then
+        CPU_SHARES_OPT="--cpu-shares=${DOCKER_ENCAPS_CPU_SHARES}"
+    fi
 
     # Run init hooks
     for hook in $(find "$DOCKER_ENCAPS_ETC_PATH" -name "init*" 2>/dev/null); do
@@ -66,6 +80,7 @@ if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; the
         --init \
         --entrypoint $DOCKER_ENCAPS_ENTRYPOINT \
         $DOCKER_ENCAPS_NET \
+        $CPU_SHARES_OPT \
         $DOCKER_ENCAPS_ARGS \
         $DOCKER_ENCAPS_IMG \
             $DOCKER_ENCAPS_SLEEP_CMD > /dev/null
