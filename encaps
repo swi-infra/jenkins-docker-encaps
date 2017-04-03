@@ -27,6 +27,10 @@ if [ -z "$UID" ]; then
     UID=$(id -u)
 fi
 
+if [ -z "$GID" ]; then
+    GID=$(id -g)
+fi
+
 # Use tini
 TINI_PATH="/opt/tini/tini"
 
@@ -36,7 +40,7 @@ if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
     docker run \
         --detach \
         --name $DOCKER_ENCAPS_NAME \
-        --user $UID \
+        --user $UID:$GID \
         --volume $PWD:$PWD \
         --workdir $PWD \
         --volumes-from $CONTAINER_ID \
