@@ -51,6 +51,9 @@ if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
 
     if [ $? -ne 0 ]; then
         echo "Unable to launch container from $DOCKER_ENCAPS_IMG"
+        echo "Logs: ---------------------------------------"
+        docker logs $DOCKER_ENCAPS_NAME
+        echo "---------------------------------------------"
         exit 1
     fi
 fi
