@@ -1,6 +1,8 @@
 #!/bin/sh
 
 DOCKER_ENCAPS_IMG=${DOCKER_ENCAPS_IMG:-"ubuntu:latest"}
+DOCKER_ENCAPS_IMG_MIRROR=${DOCKER_ENCAPS_IMG_MIRROR}
+DOCKER_ENCAPS_IMG_MIRROR_UPDATE=${DOCKER_ENCAPS_IMG_MIRROR_UPDATE:-false}
 DOCKER_ENCAPS_SHELL=${DOCKER_ENCAPS_SHELL:-"/bin/sh"}
 DOCKER_ENCAPS_ACTUAL_SHELL=${DOCKER_ENCAPS_ACTUAL_SHELL:-"/bin/sh"}
 DOCKER_ENCAPS_NET=${DOCKER_ENCAPS_NET:-'--net=host'}
@@ -36,7 +38,34 @@ TINI_PATH="/opt/tini/tini"
 
 # Spawn container
 if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
-    docker pull $DOCKER_ENCAPS_IMG
+
+    # Pull image unless a specific ID has been provided
+    if [[ "$DOCKER_ENCAPS_IMG" != "sha256:"* ]]; then
+        # If a mirror image is provided, try to pull from it first
+        IMG_MIRROR_PULL_RET=1
+        if [ -n "$DOCKER_ENCAPS_IMG_MIRROR" ]; then
+            docker pull $DOCKER_ENCAPS_IMG_MIRROR
+            IMG_MIRROR_PULL_RET=$?
+        fi
+
+        # If the pull fails and a pull from a mirror has been successful,
+        # use that image instead as a fallback
+        if ! docker pull $DOCKER_ENCAPS_IMG; then
+            if [ $IMG_MIRROR_PULL_RET -eq 0 ]; then
+                DOCKER_ENCAPS_IMG="$DOCKER_ENCAPS_IMG_MIRROR"
+            fi
+        fi
+
+        if [ -n "$DOCKER_ENCAPS_IMG_MIRROR" ] && [[ "$DOCKER_ENCAPS_IMG_MIRROR_UPDATE" == "true" ]]; then
+            if [[ "$(docker images -q $DOCKER_ENCAPS_IMG | head -1)" != "$(docker images -q $DOCKER_ENCAPS_IMG_MIRROR | head -1)" ]]; then
+                echo "encaps: Updating mirror $DOCKER_ENCAPS_IMG_MIRROR"
+                docker tag $DOCKER_ENCAPS_IMG $DOCKER_ENCAPS_IMG_MIRROR
+                docker push $DOCKER_ENCAPS_IMG_MIRROR
+            fi
+        fi
+    fi
+
+    set -x
     docker run \
         --detach \
         --name $DOCKER_ENCAPS_NAME \
@@ -48,9 +77,11 @@ if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
         $DOCKER_ENCAPS_ARGS \
         $DOCKER_ENCAPS_IMG \
             $TINI_PATH -- tail -f /dev/null > /dev/null
+    RUN_RET=$?
+    set +x
 
-    if [ $? -ne 0 ]; then
-        echo "Unable to launch container from $DOCKER_ENCAPS_IMG"
+    if [ $RUN_RET -ne 0 ]; then
+        echo "encaps: Unable to launch container from $DOCKER_ENCAPS_IMG"
         echo "Logs: ---------------------------------------"
         docker logs $DOCKER_ENCAPS_NAME
         echo "---------------------------------------------"
