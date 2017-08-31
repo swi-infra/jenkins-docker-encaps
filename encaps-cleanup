@@ -2,6 +2,8 @@
 
 set +e
 
+DOCKER_ENCAPS_ETC_PATH=${DOCKER_ENCAPS_ETC_PATH:-'/etc/encaps.d'}
+
 if [ -z "$DOCKER_ENCAPS_NAME" ]; then
     if [ -z "$BUILD_TAG" ]; then
         echo "No DOCKER_ENCAPS_NAME or BUILD_TAG"
@@ -11,6 +13,18 @@ if [ -z "$DOCKER_ENCAPS_NAME" ]; then
     DOCKER_ENCAPS_NAME=$(echo $BUILD_TAG | sed 's/[^a-zA-Z0-9_.-]/_/g')
 fi
 
+# Run clean-up hooks
+for hook in $(find $DOCKER_ENCAPS_ETC_PATH -name "cleanup-pre*" 2>/dev/null); do
+    $hook
+done
+
 docker kill $DOCKER_ENCAPS_NAME
 docker rm $DOCKER_ENCAPS_NAME
+RM_RET=$?
+
+for hook in $(find $DOCKER_ENCAPS_ETC_PATH -name "cleanup-post*" 2>/dev/null); do
+    $hook
+done
+
+exit $RM_RET
 

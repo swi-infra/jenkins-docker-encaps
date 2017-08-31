@@ -6,6 +6,7 @@ DOCKER_ENCAPS_IMG_MIRROR_UPDATE=${DOCKER_ENCAPS_IMG_MIRROR_UPDATE:-false}
 DOCKER_ENCAPS_SHELL=${DOCKER_ENCAPS_SHELL:-"/bin/sh"}
 DOCKER_ENCAPS_ACTUAL_SHELL=${DOCKER_ENCAPS_ACTUAL_SHELL:-"/bin/sh"}
 DOCKER_ENCAPS_NET=${DOCKER_ENCAPS_NET:-'--net=host'}
+DOCKER_ENCAPS_ETC_PATH=${DOCKER_ENCAPS_ETC_PATH:-'/etc/encaps.d'}
 
 # Name of the container running this slave
 # If your container name is dynamic, you can eventually use:
@@ -38,6 +39,11 @@ TINI_PATH="/opt/tini/tini"
 
 # Spawn container
 if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
+
+    # Run init hooks
+    for hook in $(find $DOCKER_ENCAPS_ETC_PATH -name "init*" 2>/dev/null); do
+        $hook
+    done
 
     # Pull image unless a specific ID has been provided
     if [[ "$DOCKER_ENCAPS_IMG" != "sha256:"* ]]; then
