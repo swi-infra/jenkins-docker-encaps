@@ -7,14 +7,21 @@ DOCKER_ENCAPS_SHELL=${DOCKER_ENCAPS_SHELL:-"/bin/sh"}
 DOCKER_ENCAPS_ACTUAL_SHELL=${DOCKER_ENCAPS_ACTUAL_SHELL:-"/bin/sh"}
 DOCKER_ENCAPS_NET=${DOCKER_ENCAPS_NET:-'--net=host'}
 DOCKER_ENCAPS_ETC_PATH=${DOCKER_ENCAPS_ETC_PATH:-'/etc/encaps.d'}
+DOCKER_ENCAPS_TINI_PATH=${DOCKER_ENCAPS_TINI_PATH:-"/opt/tini/tini"}
+DOCKER_ENCAPS_CONTAINER_SHARING=${DOCKER_ENCAPS_CONTAINER_SHARING:-true}
+DOCKER_ENCAPS_CONTAINER_ID=${DOCKER_ENCAPS_CONTAINER_ID:-jenkins-slave}
+DOCKER_ENCAPS_CONTAINER_ARGS=${DOCKER_ENCAPS_CONTAINER_ARGS:-""}
 
 # Name of the container running this slave
 # If your container name is dynamic, you can eventually use:
 #  docker run --cidfile=/tmp/container.id -v /tmp/container.id:/tmp/container.id
-if [ -e "/tmp/container.id" ]; then
-    CONTAINER_ID=$(cat /tmp/container.id)
-else
-    CONTAINER_ID=${CONTAINER_ID:-jenkins-slave}
+# The goal here is to expose a container that can provide (at least) tini.
+if [ "$DOCKER_ENCAPS_CONTAINER_SHARING" = "true" ]; then
+    if [ -e "/tmp/container.id" ]; then
+        DOCKER_ENCAPS_CONTAINER_ID=$(cat /tmp/container.id)
+    fi
+
+    DOCKER_ENCAPS_CONTAINER_ARGS="--volumes-from '$DOCKER_ENCAPS_CONTAINER_ID'"
 fi
 
 if [ -z "$DOCKER_ENCAPS_NAME" ]; then
@@ -33,9 +40,6 @@ fi
 if [ -z "$GID" ]; then
     GID=$(id -g)
 fi
-
-# Use tini
-TINI_PATH="/opt/tini/tini"
 
 # Spawn container
 if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; then
@@ -78,11 +82,11 @@ if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; the
         --user "$UID:$GID" \
         --volume "$PWD:$PWD" \
         --workdir "$PWD" \
-        --volumes-from "$CONTAINER_ID" \
+        $DOCKER_ENCAPS_CONTAINER_ARGS \
         $DOCKER_ENCAPS_NET \
         $DOCKER_ENCAPS_ARGS \
         $DOCKER_ENCAPS_IMG \
-            $TINI_PATH -- tail -f /dev/null > /dev/null
+            $DOCKER_ENCAPS_TINI_PATH -- tail -f /dev/null > /dev/null
     RUN_RET=$?
     set +x
 
