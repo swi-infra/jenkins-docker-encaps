@@ -23,7 +23,7 @@ if [ -z "$DOCKER_ENCAPS_NAME" ]; then
         exit 1
     fi
 
-    DOCKER_ENCAPS_NAME=$(echo $BUILD_TAG | sed 's/[^a-zA-Z0-9_.-]/_/g')
+    DOCKER_ENCAPS_NAME=$(echo "$BUILD_TAG" | sed 's/[^a-zA-Z0-9_.-]/_/g')
 fi
 
 if [ -z "$UID" ]; then
@@ -38,35 +38,35 @@ fi
 TINI_PATH="/opt/tini/tini"
 
 # Spawn container
-if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
+if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; then
 
     # Run init hooks
-    for hook in $(find $DOCKER_ENCAPS_ETC_PATH -name "init*" 2>/dev/null); do
+    for hook in $(find "$DOCKER_ENCAPS_ETC_PATH" -name "init*" 2>/dev/null); do
         $hook
     done
 
     # Pull image unless a specific ID has been provided
-    if [[ "$DOCKER_ENCAPS_IMG" != "sha256:"* ]]; then
+    if [ "$DOCKER_ENCAPS_IMG" != "sha256:"* ]; then
         # If a mirror image is provided, try to pull from it first
         IMG_MIRROR_PULL_RET=1
         if [ -n "$DOCKER_ENCAPS_IMG_MIRROR" ]; then
-            docker pull $DOCKER_ENCAPS_IMG_MIRROR
+            docker pull "$DOCKER_ENCAPS_IMG_MIRROR"
             IMG_MIRROR_PULL_RET=$?
         fi
 
         # If the pull fails and a pull from a mirror has been successful,
         # use that image instead as a fallback
-        if ! docker pull $DOCKER_ENCAPS_IMG; then
+        if ! docker pull "$DOCKER_ENCAPS_IMG"; then
             if [ $IMG_MIRROR_PULL_RET -eq 0 ]; then
                 DOCKER_ENCAPS_IMG="$DOCKER_ENCAPS_IMG_MIRROR"
             fi
         fi
 
-        if [ -n "$DOCKER_ENCAPS_IMG_MIRROR" ] && [[ "$DOCKER_ENCAPS_IMG_MIRROR_UPDATE" == "true" ]]; then
-            if [[ "$(docker images -q $DOCKER_ENCAPS_IMG | head -1)" != "$(docker images -q $DOCKER_ENCAPS_IMG_MIRROR | head -1)" ]]; then
+        if [ -n "$DOCKER_ENCAPS_IMG_MIRROR" ] && [ "$DOCKER_ENCAPS_IMG_MIRROR_UPDATE" = "true" ]; then
+            if [ "$(docker images -q "$DOCKER_ENCAPS_IMG" | head -1)" != "$(docker images -q "$DOCKER_ENCAPS_IMG_MIRROR" | head -1)" ]; then
                 echo "encaps: Updating mirror $DOCKER_ENCAPS_IMG_MIRROR"
-                docker tag $DOCKER_ENCAPS_IMG $DOCKER_ENCAPS_IMG_MIRROR
-                docker push $DOCKER_ENCAPS_IMG_MIRROR
+                docker tag "$DOCKER_ENCAPS_IMG" "$DOCKER_ENCAPS_IMG_MIRROR"
+                docker push "$DOCKER_ENCAPS_IMG_MIRROR"
             fi
         fi
     fi
@@ -74,11 +74,11 @@ if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
     set -x
     docker run \
         --detach \
-        --name $DOCKER_ENCAPS_NAME \
-        --user $UID:$GID \
-        --volume $PWD:$PWD \
-        --workdir $PWD \
-        --volumes-from $CONTAINER_ID \
+        --name "$DOCKER_ENCAPS_NAME" \
+        --user "$UID:$GID" \
+        --volume "$PWD:$PWD" \
+        --workdir "$PWD" \
+        --volumes-from "$CONTAINER_ID" \
         $DOCKER_ENCAPS_NET \
         $DOCKER_ENCAPS_ARGS \
         $DOCKER_ENCAPS_IMG \
@@ -89,23 +89,23 @@ if ! docker inspect --type=container $DOCKER_ENCAPS_NAME > /dev/null 2>&1; then
     if [ $RUN_RET -ne 0 ]; then
         echo "encaps: Unable to launch container from $DOCKER_ENCAPS_IMG"
         echo "Logs: ---------------------------------------"
-        docker logs $DOCKER_ENCAPS_NAME
+        docker logs "$DOCKER_ENCAPS_NAME"
         echo "---------------------------------------------"
         exit 1
     fi
 fi
 
-TMP_FILE="/tmp/script-$(sha1sum $1 | awk '{print $1}')"
+TMP_FILE="/tmp/script-$(sha1sum "$1" | awk '{print $1}')"
 
 # Copy file in container
-docker exec -i $DOCKER_ENCAPS_NAME $DOCKER_ENCAPS_ACTUAL_SHELL -c "cat > $TMP_FILE" < $1
+docker exec -i "$DOCKER_ENCAPS_NAME" "$DOCKER_ENCAPS_ACTUAL_SHELL" -c "cat > $TMP_FILE" < $1
 
 # Exec file
 docker exec \
     --interactive \
     $DOCKER_ENCAPS_EXEC_ARGS \
-    $DOCKER_ENCAPS_NAME \
-    $DOCKER_ENCAPS_SHELL $TMP_FILE
+    "$DOCKER_ENCAPS_NAME" \
+    "$DOCKER_ENCAPS_SHELL" "$TMP_FILE"
 RET=$?
 
 echo "Exit $RET"
