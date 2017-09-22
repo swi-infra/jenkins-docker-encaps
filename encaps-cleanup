@@ -3,6 +3,7 @@
 set +e
 
 DOCKER_ENCAPS_ETC_PATH=${DOCKER_ENCAPS_ETC_PATH:-'/etc/encaps.d'}
+DOCKER_ENCAPS_KILL_DELAY=10
 
 if [ -z "$DOCKER_ENCAPS_NAME" ]; then
     if [ -z "$BUILD_TAG" ]; then
@@ -18,8 +19,24 @@ for hook in $(find "$DOCKER_ENCAPS_ETC_PATH" -name "cleanup-pre*" 2>/dev/null); 
     $hook
 done
 
+# Try to kill the container
+KILL_OK=1
 docker kill "$DOCKER_ENCAPS_NAME"
-docker rm "$DOCKER_ENCAPS_NAME"
+for (( i=0; i<$DOCKER_ENCAPS_KILL_DELAY; i++ )); do
+    if [ "$(docker inspect --type=container --format='{{.State.Status}}' "$DOCKER_ENCAPS_NAME")" != "running" ]; then
+        KILL_OK=0
+        break
+    fi
+    sleep 2
+done
+
+# Force kill
+if [ $KILL_OK -ne 0 ]; then
+    docker kill --signal=TERM "$DOCKER_ENCAPS_NAME"
+    sleep 5
+fi
+
+docker rm --force "$DOCKER_ENCAPS_NAME"
 RM_RET=$?
 
 for hook in $(find "$DOCKER_ENCAPS_ETC_PATH" -name "cleanup-post*" 2>/dev/null); do
