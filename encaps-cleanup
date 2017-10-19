@@ -21,7 +21,8 @@ done
 
 # Try to kill the container
 KILL_OK=1
-docker kill "$DOCKER_ENCAPS_NAME"
+docker kill "$DOCKER_ENCAPS_NAME" &
+KILL_PID=$!
 for (( i=0; i<$DOCKER_ENCAPS_KILL_DELAY; i++ )); do
     if [ "$(docker inspect --type=container --format='{{.State.Status}}' "$DOCKER_ENCAPS_NAME")" != "running" ]; then
         KILL_OK=0
@@ -29,6 +30,7 @@ for (( i=0; i<$DOCKER_ENCAPS_KILL_DELAY; i++ )); do
     fi
     sleep 2
 done
+kill $KILL_PID || true
 
 # Force kill
 if [ $KILL_OK -ne 0 ]; then
