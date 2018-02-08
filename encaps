@@ -85,7 +85,6 @@ if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; the
         --detach \
         --name "$DOCKER_ENCAPS_NAME" \
         --user "$UID:$GID" \
-        --tmpfs /tmp \
         --volume "$PWD:$PWD" \
         --workdir "$PWD" \
         $DOCKER_ENCAPS_CONTAINER_ARGS \
