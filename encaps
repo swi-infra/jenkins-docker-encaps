@@ -7,6 +7,8 @@ DOCKER_ENCAPS_SHELL=${DOCKER_ENCAPS_SHELL:-"/bin/sh"}
 DOCKER_ENCAPS_ACTUAL_SHELL=${DOCKER_ENCAPS_ACTUAL_SHELL:-"/bin/sh"}
 DOCKER_ENCAPS_NET=${DOCKER_ENCAPS_NET:-'--net=host'}
 DOCKER_ENCAPS_ETC_PATH=${DOCKER_ENCAPS_ETC_PATH:-'/etc/encaps.d'}
+DOCKER_ENCAPS_UID=${DOCKER_ENCAPS_UID:-$(id -u)}
+DOCKER_ENCAPS_GID=${DOCKER_ENCAPS_GID:-$(id -g)}
 
 if [ -z "$DOCKER_ENCAPS_NAME" ]; then
     if [ -z "$BUILD_TAG" ]; then
@@ -15,14 +17,6 @@ if [ -z "$DOCKER_ENCAPS_NAME" ]; then
     fi
 
     DOCKER_ENCAPS_NAME=$(echo "$BUILD_TAG" | sed 's/[^a-zA-Z0-9_.-]/_/g')
-fi
-
-if [ -z "$UID" ]; then
-    UID=$(id -u)
-fi
-
-if [ -z "$GID" ]; then
-    GID=$(id -g)
 fi
 
 # Spawn container
@@ -63,7 +57,7 @@ if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; the
     docker run \
         --detach \
         --name "$DOCKER_ENCAPS_NAME" \
-        --user "$UID:$GID" \
+        --user "$DOCKER_ENCAPS_UID:$DOCKER_ENCAPS_GID" \
         --volume "$PWD:$PWD" \
         --workdir "$PWD" \
         --init \
