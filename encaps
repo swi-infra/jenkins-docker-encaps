@@ -58,6 +58,7 @@ if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; the
         --detach \
         --name "$DOCKER_ENCAPS_NAME" \
         --user "$DOCKER_ENCAPS_UID:$DOCKER_ENCAPS_GID" \
+        --tmpfs "/run/user/$DOCKER_ENCAPS_UID" \
         --volume "$PWD:$PWD" \
         --workdir "$PWD" \
         --init \
