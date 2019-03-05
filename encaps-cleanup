@@ -3,7 +3,8 @@
 set +e
 
 DOCKER_ENCAPS_ETC_PATH=${DOCKER_ENCAPS_ETC_PATH:-'/etc/encaps.d'}
-DOCKER_ENCAPS_KILL_DELAY=10
+DOCKER_ENCAPS_KILL_TIMEOUT=${DOCKER_ENCAPS_KILL_TIMEOUT:-30}
+DOCKER_ENCAPS_RM_TIMEOUT=${DOCKER_ENCAPS_RM_TIMEOUT:-300}
 
 if [ -z "$DOCKER_ENCAPS_NAME" ]; then
     if [ -z "$BUILD_TAG" ]; then
@@ -23,7 +24,7 @@ done
 KILL_OK=1
 docker kill "$DOCKER_ENCAPS_NAME" &
 KILL_PID=$!
-for (( i=0; i<$DOCKER_ENCAPS_KILL_DELAY; i++ )); do
+for (( i=0; i<$DOCKER_ENCAPS_KILL_TIMEOUT; i++ )); do
     if [ "$(docker inspect --type=container --format='{{.State.Status}}' "$DOCKER_ENCAPS_NAME")" != "running" ]; then
         KILL_OK=0
         break
@@ -38,7 +39,12 @@ if [ $KILL_OK -ne 0 ]; then
     sleep 5
 fi
 
-docker rm --force "$DOCKER_ENCAPS_NAME"
+TIMEOUT_CMD=$(command -v timeout)
+if [ -z "$TIMEOUT_CMD" ]; then
+    echo "timeout command not available"
+    unset DOCKER_ENCAPS_RM_TIMEOUT
+fi
+$TIMEOUT_CMD $DOCKER_ENCAPS_RM_TIMEOUT docker rm --force "$DOCKER_ENCAPS_NAME"
 RM_RET=$?
 
 for hook in $(find "$DOCKER_ENCAPS_ETC_PATH" -name "cleanup-post*" 2>/dev/null); do
