@@ -33,6 +33,8 @@ for (( i=0; i<$DOCKER_ENCAPS_KILL_TIMEOUT; i++ )); do
 done
 kill $KILL_PID || true
 
+set +e
+
 # Force kill
 if [ $KILL_OK -ne 0 ]; then
     docker kill --signal=TERM "$DOCKER_ENCAPS_NAME"
