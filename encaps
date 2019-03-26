@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 DOCKER_ENCAPS_IMG=${DOCKER_ENCAPS_IMG:-"alpine:latest"}
 DOCKER_ENCAPS_IMG_MIRROR=${DOCKER_ENCAPS_IMG_MIRROR}
