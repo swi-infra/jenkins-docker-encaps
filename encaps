@@ -69,6 +69,14 @@ if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; the
     RUN_RET=$?
     set +x
 
+    if [ $RET_RET -eq 0 ]; then
+        STATE="$(docker inspect --type=container --format "{{.State.Status}}" "$DOCKER_ENCAPS_NAME")"
+        if [[ "$STATE" != "running" ]]; then
+            echo "encaps: container is not running"
+            RUN_RET=1
+        fi
+    fi
+
     if [ $RUN_RET -ne 0 ]; then
         echo "encaps: Unable to launch container from $DOCKER_ENCAPS_IMG"
         echo "Logs: ---------------------------------------"
