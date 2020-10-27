@@ -25,6 +25,7 @@ SimpleRun
     export DOCKER_ENCAPS_NAME="encaps-simple-test"
     prepare_script
     $TEMP_DIR/script.sh
+    [ $(docker inspect --format={{.HostConfig.CpuShares}} $DOCKER_ENCAPS_NAME) -eq 1024 ]
     encaps-cleanup
 }
 
@@ -34,5 +35,14 @@ SimpleRun
     prepare_script
     $TEMP_DIR/script.sh
     [ $(docker inspect --format={{.HostConfig.CpuShares}} $DOCKER_ENCAPS_NAME) -eq $((DOCKER_ENCAPS_WEIGHT*1024)) ]
+    encaps-cleanup
+}
+
+@test "Run encaps with weight set" {
+    export DOCKER_ENCAPS_NAME="encaps-weight-test"
+    export DOCKER_ENCAPS_WEIGHT=0
+    prepare_script
+    $TEMP_DIR/script.sh
+    [ $(docker inspect --format={{.HostConfig.CpuShares}} $DOCKER_ENCAPS_NAME) -eq 0 ]
     encaps-cleanup
 }

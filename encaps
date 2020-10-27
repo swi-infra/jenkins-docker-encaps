@@ -11,6 +11,7 @@ DOCKER_ENCAPS_UID=${DOCKER_ENCAPS_UID:-$(id -u)}
 DOCKER_ENCAPS_GID=${DOCKER_ENCAPS_GID:-$(id -g)}
 DOCKER_ENCAPS_ENTRYPOINT=${DOCKER_ENCAPS_ENTRYPOINT:-'tail'}
 DOCKER_ENCAPS_SLEEP_CMD=${DOCKER_ENCAPS_SLEEP_CMD:-'-f /dev/null'}
+DOCKER_ENCAPS_WEIGHT=${DOCKER_ENCAPS_WEIGHT:-1}
 
 # Name of the encaps container
 if [ -z "$DOCKER_ENCAPS_NAME" ]; then
@@ -29,7 +30,7 @@ if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; the
     # cf:
     # - https://docs.docker.com/engine/reference/run/#cpu-share-constraint
     # - http://stackoverflow.com/questions/26841846/how-to-allocate-50-cpu-resource-to-docker-container
-    if [ -n "$DOCKER_ENCAPS_WEIGHT" ]; then
+    if [[ "$DOCKER_ENCAPS_WEIGHT" != "0" ]]; then
         DOCKER_ENCAPS_CPU_SHARES=${DOCKER_ENCAPS_CPU_SHARES:-$((1024*DOCKER_ENCAPS_WEIGHT))}
     fi
 
@@ -44,7 +45,7 @@ if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; the
     done
 
     # Pull image unless a specific ID has been provided
-    if [ "$DOCKER_ENCAPS_IMG" != "sha256:"* ]; then
+    if [[ "$DOCKER_ENCAPS_IMG" != "sha256:"* ]]; then
         # If a mirror image is provided, try to pull from it first
         IMG_MIRROR_PULL_RET=1
         if [ -n "$DOCKER_ENCAPS_IMG_MIRROR" ]; then
