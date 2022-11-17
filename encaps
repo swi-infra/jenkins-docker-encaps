@@ -71,20 +71,20 @@ if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; the
     fi
 
     set -x
-    docker run \
-        --detach \
-        --name "$DOCKER_ENCAPS_NAME" \
-        --user "$DOCKER_ENCAPS_UID:$DOCKER_ENCAPS_GID" \
-        --tmpfs "/run/user/$DOCKER_ENCAPS_UID" \
-        --volume "$PWD:$PWD" \
-        --workdir "$PWD" \
-        --init \
-        --entrypoint $DOCKER_ENCAPS_ENTRYPOINT \
-        $DOCKER_ENCAPS_NET \
-        $CPU_SHARES_OPT \
-        $DOCKER_ENCAPS_ARGS \
-        $DOCKER_ENCAPS_IMG \
-            $DOCKER_ENCAPS_SLEEP_CMD > /dev/null
+    bash -c "docker run \
+             --detach \
+             --name "$DOCKER_ENCAPS_NAME" \
+             --user "$DOCKER_ENCAPS_UID:$DOCKER_ENCAPS_GID" \
+             --tmpfs "/run/user/$DOCKER_ENCAPS_UID" \
+             --volume "$PWD:$PWD" \
+             --workdir "$PWD" \
+             --init \
+             --entrypoint $DOCKER_ENCAPS_ENTRYPOINT \
+             $DOCKER_ENCAPS_NET \
+             $CPU_SHARES_OPT \
+             $DOCKER_ENCAPS_ARGS \
+             $DOCKER_ENCAPS_IMG \
+             $DOCKER_ENCAPS_SLEEP_CMD > /dev/null"
     RUN_RET=$?
     set +x
 
