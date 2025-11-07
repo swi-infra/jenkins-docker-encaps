@@ -23,6 +23,10 @@ if [ -z "$DOCKER_ENCAPS_NAME" ]; then
     DOCKER_ENCAPS_NAME=$(echo "$BUILD_TAG" | sed 's/[^a-zA-Z0-9_.-]/_/g')
 fi
 
+if [ -e "/etc/farm-environment" ]; then
+    DOCKER_ENCAPS_ARGS+=" --env-file /etc/farm-environment"
+fi
+
 # Spawn container
 if ! docker inspect --type=container "$DOCKER_ENCAPS_NAME" > /dev/null 2>&1; then
 
